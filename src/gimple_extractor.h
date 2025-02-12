@@ -82,9 +82,10 @@ typedef struct _function_data
 {
     std::string fn_name;
     std::string fn_filename;
+    std::string fn_unique_id; // to uniquely identify functions during function overloading
     int fn_start_line_no = -1;
     int fn_end_line_no = -1;
-    std::map<std::string, std::string> fn_source_lines;
+    // std::map<std::string, std::string> fn_source_lines;
     tree_value_t fn_decl;
     std::vector<fn_arg_variable_t> fn_args;
     std::vector<fn_local_variable_t> fn_local_variables;
@@ -100,8 +101,6 @@ typedef struct _data_value
     std::string code_class;
     std::string code_name;
 
-    bool is_expr = false;
-    unsigned int operand_length = 0;
     bool has_inner_tree = false;
 
     std::string location_file = "";
@@ -146,10 +145,9 @@ typedef struct _gimple_stmt_data
     std::string filename;
     int lineno = 0;
 
-    std::string has_substatements;
-
-    std::string has_register_or_memory_operands;
-    std::string has_memory_operands;
+    // std::string has_substatements;
+    // std::string has_register_or_memory_operands;
+    // std::string has_memory_operands;
     unsigned int gimple_num_ops = 0;
 
     int basic_block_index = 0;
@@ -344,7 +342,7 @@ typedef struct _gimple_stmt_data
 std::vector<int> getRangeVector(int start, int end);
 std::vector<std::string> readFileToVector(const std::string& filename);
 
-void write_function_to_file(std::string filename, std::string function_name, std::string function_extract_dump);
+void write_function_to_file(std::string filename, std::string function_name, std::string function_unique_id, std::string function_extract_dump);
 
 gimple_stmt_data gimple_tuple_to_stmt_data(gimple *g, int bb_index, std::vector<int> &bb_edges);
 const std::string bool_cast(const bool b);

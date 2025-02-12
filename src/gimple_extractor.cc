@@ -12,6 +12,7 @@
 #include "data_formatter.h"
 #include "data_utils.h"
 #include "cgraph.h"
+#include "ext/base64.h"
 
 
 // We must assert that this plugin is GPL compatible
@@ -41,6 +42,18 @@ const pass_data gimple_extractor_pass_data = {
     0                      /* todo_flags_finish */
 };
 
+static const char *type_as_string(tree type) {
+    if (!type) {
+        return "(null)";
+    }
+
+    // Use GCC's built-in function to print the type as a string
+    const char *type_str = print_generic_expr_to_str(type);
+
+    return type_str ? type_str : "(unknown)";
+}
+
+
 struct gimple_extractor_pass : gimple_opt_pass
 {
     gimple_extractor_pass (gcc::context *ctx)
@@ -56,6 +69,7 @@ struct gimple_extractor_pass : gimple_opt_pass
 
         function_data_t fn_data;
         fn_data.fn_name = function_name (fun);
+        fn_data.fn_unique_id = "::" + fn_data.fn_name;
 
         {
             expanded_location xloc
@@ -88,35 +102,35 @@ struct gimple_extractor_pass : gimple_opt_pass
         std::cout << "[gimple-extractor] processing ... [" << fn_data.fn_filename << "] -- "
                   << fn_data.fn_name << std::endl;
 
-        std::vector<std::string> source_lines
-            = readFileToVector (std::string (fn_data.fn_filename));
-        int source_lines_size = source_lines.size ();
+        // std::vector<std::string> source_lines
+        //     = readFileToVector (std::string (fn_data.fn_filename));
+        // int source_lines_size = source_lines.size ();
 
-        std::vector<int> start_end_range
-            = getRangeVector (fn_data.fn_start_line_no, fn_data.fn_end_line_no);
+        // std::vector<int> start_end_range
+        //     = getRangeVector (fn_data.fn_start_line_no, fn_data.fn_end_line_no);
 
-        for (int num : start_end_range)
-            {
-                //  if file is empty, set to emtpy string
-                if (source_lines_size < 1)
-                    {
-                        fn_data.fn_source_lines[std::to_string (num)] = "";
-                    }
-                else
-                    {
-                        int real_lineno = num - 1;
-                        if (real_lineno < source_lines_size)
-                            {
-                                fn_data.fn_source_lines[std::to_string (num)]
-                                    = source_lines.at (real_lineno);
-                            }
-                        else
-                            {
-                                fn_data.fn_source_lines[std::to_string (num)]
-                                    = "";
-                            }
-                    }
-            }
+        // for (int num : start_end_range)
+        //     {
+        //         //  if file is empty, set to emtpy string
+        //         if (source_lines_size < 1)
+        //             {
+        //                 fn_data.fn_source_lines[std::to_string (num)] = "";
+        //             }
+        //         else
+        //             {
+        //                 int real_lineno = num - 1;
+        //                 if (real_lineno < source_lines_size)
+        //                     {
+        //                         fn_data.fn_source_lines[std::to_string (num)]
+        //                             = source_lines.at (real_lineno);
+        //                     }
+        //                 else
+        //                     {
+        //                         fn_data.fn_source_lines[std::to_string (num)]
+        //                             = "";
+        //                     }
+        //             }
+        //     }
 
         // function tree data
         {
@@ -195,6 +209,17 @@ struct gimple_extractor_pass : gimple_opt_pass
 
                         var.arg = tvalue;
                         fn_data.fn_args.push_back (var);
+
+                        // function arg hash for uniquely identify
+                        // function overloading
+                        const char *arg_name = IDENTIFIER_POINTER(DECL_NAME(arg));
+                        tree arg_type = TREE_TYPE(arg);
+
+                        std::string arg_name_str = arg_name ? arg_name : "(unnamed)";
+                        std::string arg_type_str = arg_type ? type_as_string(arg_type) : "(unknown type)";
+
+                        fn_data.fn_unique_id += "::" + remove_spaces(arg_type_str);
+                        fn_data.fn_unique_id += "::" + remove_spaces(arg_name_str);
                     }
             }
 
@@ -328,7 +353,7 @@ struct gimple_extractor_pass : gimple_opt_pass
             stmt_data_list, basic_block_list, fn_data, config_data_format);
 
         write_function_to_file (fn_data.fn_filename, fn_data.fn_name,
-                                fn_extract_dump);
+                                fn_data.fn_unique_id, fn_extract_dump);
 
         std::cout << "[gimple-extractor] done ... [" << fn_data.fn_filename << "] -- "
                   << fn_data.fn_name << std::endl;
@@ -402,7 +427,7 @@ plugin_init (struct plugin_name_args *plugin_info,
 
 void
 write_function_to_file (std::string filename, std::string function_name,
-                        std::string function_extract_dump)
+                        std::string function_unique_id, std::string function_extract_dump)
 {
     std::string output_filename_without_source_path
         = filename.substr (config_source_path.size ());
@@ -434,10 +459,14 @@ write_function_to_file (std::string filename, std::string function_name,
             throw std::runtime_error ("Error creating extract directory");
         }
 
-    std::string output_full_path = output_dir_path + "/" + output_function_name
-                                   + "." + config_data_format;
+    std::string output_full_path = output_dir_path + "/" + output_function_name;
 
-    // std::cout << output_full_path << std::endl;
+    // since we store data based on function names, to solve function overloading,
+    // we use add a base64 of the function args to generate unique filenames. 
+    output_full_path += "-" + base64_encode(function_unique_id);
+
+    // add extension
+    output_full_path += "." + config_data_format;
 
     std::ofstream jsonfile;
     jsonfile.open (output_full_path);
@@ -474,7 +503,7 @@ gimple_tuple_to_stmt_data (gimple *g, int bb_index, std::vector<int> &bb_edges)
     stmt_data.gimple_stmt_expr_code_str
         = get_tree_code_name (stmt_data.gimple_stmt_expr_code);
 
-    stmt_data.has_substatements = bool_cast (gimple_has_substatements (g));
+    // stmt_data.has_substatements = bool_cast (gimple_has_substatements (g));
 
     if (gimple_has_location (g))
         {
@@ -482,8 +511,8 @@ gimple_tuple_to_stmt_data (gimple *g, int bb_index, std::vector<int> &bb_edges)
             stmt_data.lineno = gimple_lineno (g);
         }
 
-    stmt_data.has_register_or_memory_operands = bool_cast (gimple_has_ops (g));
-    stmt_data.has_memory_operands = bool_cast (gimple_has_mem_ops (g));
+    // stmt_data.has_register_or_memory_operands = bool_cast (gimple_has_ops (g));
+    // stmt_data.has_memory_operands = bool_cast (gimple_has_mem_ops (g));
 
     stmt_data.basic_block_index = bb_index;
     stmt_data.basic_block_edges = bb_edges;
@@ -624,8 +653,7 @@ get_basic_tree_node_info (tree tree_node, data_value_t &dvalue)
     dvalue.code = TREE_CODE (tree_node);
     dvalue.code_class = TREE_CODE_CLASS_STRING (TREE_CODE_CLASS (dvalue.code));
     dvalue.code_name = get_tree_code_name (dvalue.code);
-    dvalue.is_expr = EXPR_P (tree_node);
-    dvalue.operand_length = TREE_OPERAND_LENGTH (tree_node);
+    // dvalue.is_expr = EXPR_P (tree_node);
 
     if (EXPR_HAS_LOCATION (tree_node))
         {
@@ -896,21 +924,21 @@ dump_mem_ref (tree node, std::vector<data_value_t> &dvalues,
             ppp_decimal_int (dvalues, dvalue, TYPE_ALIGN (TREE_TYPE (node)));
         }
     ppp_greater (dvalues, dvalue);
-    ppp_string (dvalues, dvalue, " (");
-    if (TREE_TYPE (TREE_OPERAND (node, 0))
-        != TREE_TYPE (TREE_OPERAND (node, 1)))
-        {
-            ppp_left_paren (dvalues, dvalue);
-            get_tree_data_values (TREE_TYPE (TREE_OPERAND (node, 1)), dvalues);
-            ppp_right_paren (dvalues, dvalue);
-        }
-    get_tree_data_values (TREE_OPERAND (node, 0), dvalues);
-    if (!integer_zerop (TREE_OPERAND (node, 1)))
-        {
-            ppp_string (dvalues, dvalue, " + ");
-            get_tree_data_values (TREE_OPERAND (node, 1), dvalues);
-        }
-    ppp_right_paren (dvalues, dvalue);
+    // ppp_string (dvalues, dvalue, " (");
+    // if (TREE_TYPE (TREE_OPERAND (node, 0))
+    //     != TREE_TYPE (TREE_OPERAND (node, 1)))
+    //     {
+    //         ppp_left_paren (dvalues, dvalue);
+    //         get_tree_data_values (TREE_TYPE (TREE_OPERAND (node, 1)), dvalues);
+    //         ppp_right_paren (dvalues, dvalue);
+    //     }
+    // get_tree_data_values (TREE_OPERAND (node, 0), dvalues);
+    // if (!integer_zerop (TREE_OPERAND (node, 1)))
+    //     {
+    //         ppp_string (dvalues, dvalue, " + ");
+    //         get_tree_data_values (TREE_OPERAND (node, 1), dvalues);
+    //     }
+    // ppp_right_paren (dvalues, dvalue);
 
     if (integer_zerop (TREE_OPERAND (node, 1))
         /* Dump the types of INTEGER_CSTs explicitly, for we can't
@@ -3371,12 +3399,51 @@ get_tree_data_values (tree node, std::vector<data_value_t> &dvalues)
 
         case OBJ_TYPE_REF:
             {
+                // std::vector<data_value_t> complex_dvalues;
+
+                // ppp_string (complex_dvalues, dvalue, "OBJ_TYPE_REF(");
+                // get_tree_data_values (OBJ_TYPE_REF_EXPR (node),
+                //                       complex_dvalues);
+                // ppp_semicolon (complex_dvalues, dvalue);
+                // /* We omit the class type for -fcompare-debug because we may
+                //    drop TYPE_BINFO early depending on debug info, and then
+                //    virtual_method_call_p would return false, whereas when
+                //    TYPE_BINFO is preserved it may still return true and then
+                //    we'd print the class type.  Compare tree and rtl dumps for
+                //    libstdc++-prettyprinters/shared_ptr.cc with and without -g,
+                //    for example, at occurrences of OBJ_TYPE_REF.  */
+                // if (virtual_method_call_p (node))
+                //     {
+                //         ppp_string (complex_dvalues, dvalue, "(");
+                //         get_tree_data_values (obj_type_ref_class (node),
+                //                               complex_dvalues);
+                //         ppp_string (complex_dvalues, dvalue, ")");
+                //     }
+                // get_tree_data_values (OBJ_TYPE_REF_OBJECT (node),
+                //                       complex_dvalues);
+                // ppp_arrow (complex_dvalues, dvalue);
+                // get_tree_data_values (OBJ_TYPE_REF_TOKEN (node),
+                //                       complex_dvalues);
+                // ppp_right_paren (complex_dvalues, dvalue);
+
+                // append_complex_value (dvalues, dvalue, complex_dvalues);
+
+
+                // 
+                // new into :
+                // OBJ_TYPE_REF <b, &foo, Base>;
+                // where =>
+                //      `b` is the base object.
+                //      `foo` is the member function being called.
+                //      `Base` is the static type.
                 std::vector<data_value_t> complex_dvalues;
 
-                ppp_string (complex_dvalues, dvalue, "OBJ_TYPE_REF(");
+                ppp_string (complex_dvalues, dvalue, "OBJ_TYPE_REF");
+                ppp_string (complex_dvalues, dvalue, "<");
                 get_tree_data_values (OBJ_TYPE_REF_EXPR (node),
                                       complex_dvalues);
-                ppp_semicolon (complex_dvalues, dvalue);
+
+                ppp_string (complex_dvalues, dvalue, ",");
                 /* We omit the class type for -fcompare-debug because we may
                    drop TYPE_BINFO early depending on debug info, and then
                    virtual_method_call_p would return false, whereas when
@@ -3396,9 +3463,10 @@ get_tree_data_values (tree node, std::vector<data_value_t> &dvalues)
                 ppp_arrow (complex_dvalues, dvalue);
                 get_tree_data_values (OBJ_TYPE_REF_TOKEN (node),
                                       complex_dvalues);
-                ppp_right_paren (complex_dvalues, dvalue);
+                ppp_string (complex_dvalues, dvalue, ">");
 
                 append_complex_value (dvalues, dvalue, complex_dvalues);
+
                 break;
             }
 

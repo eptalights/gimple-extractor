@@ -13,13 +13,7 @@ data_value_to_msgpack_object (data_value_t &dvalue)
                 { "value_type", dvalue.value_type },
                 { "code_class", dvalue.code_class },
                 { "code_name", dvalue.code_name },
-                { "is_expr", dvalue.is_expr },
-                { "operand_length", int (dvalue.operand_length) },
                 { "value", dvalue.simple_data_value },
-                // { "has_inner_tree",  dvalue.has_inner_tree },
-                // { "location_file",   dvalue.location_file },
-                // { "location_line",   dvalue.location_line },
-                // { "location_column", dvalue.location_column },
             };
         }
 
@@ -37,13 +31,7 @@ data_value_to_msgpack_object (data_value_t &dvalue)
                 { "value_type", dvalue.value_type },
                 { "code_class", dvalue.code_class },
                 { "code_name", dvalue.code_name },
-                { "is_expr", dvalue.is_expr },
-                { "operand_length", int (dvalue.operand_length) },
                 { "value", complex_dvalues },
-                // { "has_inner_tree",  dvalue.has_inner_tree },
-                // { "location_file",   dvalue.location_file },
-                // { "location_line",   dvalue.location_line },
-                // { "location_column", dvalue.location_column },
             };
         }
     else
@@ -87,11 +75,6 @@ stmt_data_to_msgpack_object (gimple_stmt_data &stmt_data)
         { "gimple_code", stmt_data.gimple_stmt_code_str },
         { "gimple_expr_code", stmt_data.gimple_stmt_expr_code_str },
         { "lineno", stmt_data.lineno },
-        { "has_substatements", stmt_data.has_substatements },
-        { "has_register_or_memory_operands",
-          stmt_data.has_register_or_memory_operands },
-        { "has_memory_operands", stmt_data.has_memory_operands },
-        { "gimple_num_ops", int (stmt_data.gimple_num_ops) },
         { "basic_block_index", stmt_data.basic_block_index },
         { "basic_block_edges", stmt_data.basic_block_edges },
 
@@ -207,30 +190,10 @@ get_stmt_data_args_msgpack (gimple_stmt_data &stmt_data)
                             stmt_data.gcall_static_chain_for_call_statement);
 
                 data_args = MsgPack::object{
-                    { "gcall_isinternal_only_function",
-                      stmt_data.gcall_isinternal_only_function },
-                    { "gcall_internal_function_name",
-                      stmt_data.gcall_internal_function_name },
-
                     { "gcall_call_num_of_args",
                       stmt_data.gcall_call_num_of_args },
                     { "gcall_has_lhs", stmt_data.gcall_has_lhs },
                     { "gcall_lhs_arg", gcall_lhs_arg },
-
-                    { "gcall_is_tm_clone", stmt_data.gcall_is_tm_clone },
-                    { "gcall_transaction_code_properties",
-                      stmt_data.gcall_transaction_code_properties },
-                    { "gcall_is_marked_for_return_slot_optimization",
-                      stmt_data.gcall_is_marked_for_return_slot_optimization },
-                    { "gcall_is_marked_as_a_tail_call",
-                      stmt_data.gcall_is_marked_as_a_tail_call },
-                    { "gcall_is_marked_as_requiring_tail_call_optimization",
-                      stmt_data
-                          .gcall_is_marked_as_requiring_tail_call_optimization },
-                    { "gcall_has_static_chain_for_call_statement",
-                      stmt_data.gcall_has_static_chain_for_call_statement },
-                    { "gcall_static_chain_for_call_statement",
-                      gcall_static_chain_for_call_statement },
 
                     { "gcall_fn",
                       tree_value_to_msgpack_object (stmt_data.gcall_fn) },
@@ -511,7 +474,7 @@ function_data_to_msgpack_object (function_data_t &fn_data)
         { "fn_filename", fn_data.fn_filename },
         { "fn_start_line_no", fn_data.fn_start_line_no },
         { "fn_end_line_no", fn_data.fn_end_line_no },
-        { "fn_source_lines", fn_data.fn_source_lines },
+        // { "fn_source_lines", fn_data.fn_source_lines },
         { "fn_decl", tree_value_to_msgpack_object (fn_data.fn_decl) },
         { "fn_ssa_names",
           tree_values_to_msgpack_object (fn_data.fn_ssa_names) },
