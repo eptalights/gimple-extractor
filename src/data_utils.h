@@ -218,4 +218,12 @@ starts_with_char (const std::string &str, char ch)
     return str[0] == ch;
 }
 
+
+std::string
+remove_spaces(const std::string& str) {
+    std::string result = str;
+    result.erase(std::remove(result.begin(), result.end(), ' '), result.end());
+    return result;
+}
+
 #endif

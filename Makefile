@@ -15,7 +15,7 @@ PLUGINDIR=$(shell $(CXX) -print-file-name=plugin)
 CXXFLAGS += -I$(PLUGINDIR)/include
 
 # Source files
-SRCS = $(SRC_DIR)/gimple_extractor.cc $(EXT_DIR)/json11.cpp $(EXT_DIR)/msgpack11.cpp \
+SRCS = $(SRC_DIR)/gimple_extractor.cc $(EXT_DIR)/json11.cpp $(EXT_DIR)/msgpack11.cpp $(EXT_DIR)/base64.cpp \
        $(SRC_DIR)/data_formatter.cc $(SRC_DIR)/data_formatter_json.cc $(SRC_DIR)/data_formatter_msgpack.cc
 
 # Object files
