@@ -371,6 +371,8 @@ void dump_gimple_switch(const gswitch *gs, gimple_stmt_data &stmt_data);
 void dump_gimple_try(const gtry *gs, gimple_stmt_data &stmt_data);
 void dump_gimple_phi(const gphi *phi, gimple_stmt_data &stmt_data);
 
+std::vector<std::string> split_string_by_comma(const std::string& str);
+bool contains_string(const std::vector<std::string>& vec, const std::string& search_str);
 
 #define ppp_string(dvalues, dvalue, str) 	    append_simple_value(dvalues, dvalue, str);
 #define ppp_decimal_int(dvalues, dvalue, val) append_simple_value(dvalues, dvalue, std::to_string(val));
