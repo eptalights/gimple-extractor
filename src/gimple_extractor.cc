@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fstream>
+#include <sstream>
 #include "gimple_extractor.h"
 #include "data_formatter.h"
 #include "data_utils.h"
@@ -21,6 +22,7 @@ int plugin_is_GPL_compatible;
 std::string config_data_format = "msgpack";
 std::string config_output_path = "__default_gimple_extract_output/";
 std::string config_source_path = ".";
+std::vector<std::string> config_skip_functions;
 
 
 static struct plugin_info my_gcc_plugin_info = {
@@ -99,38 +101,11 @@ struct gimple_extractor_pass : gimple_opt_pass
         if (!starts_with(fn_data.fn_filename, config_source_path)) 
             return 0;
 
+        if (contains_string(config_skip_functions, fn_data.fn_name) == true)
+            return 0;
+
         std::cout << "[gimple-extractor] processing ... [" << fn_data.fn_filename << "] -- "
                   << fn_data.fn_name << std::endl;
-
-        // std::vector<std::string> source_lines
-        //     = readFileToVector (std::string (fn_data.fn_filename));
-        // int source_lines_size = source_lines.size ();
-
-        // std::vector<int> start_end_range
-        //     = getRangeVector (fn_data.fn_start_line_no, fn_data.fn_end_line_no);
-
-        // for (int num : start_end_range)
-        //     {
-        //         //  if file is empty, set to emtpy string
-        //         if (source_lines_size < 1)
-        //             {
-        //                 fn_data.fn_source_lines[std::to_string (num)] = "";
-        //             }
-        //         else
-        //             {
-        //                 int real_lineno = num - 1;
-        //                 if (real_lineno < source_lines_size)
-        //                     {
-        //                         fn_data.fn_source_lines[std::to_string (num)]
-        //                             = source_lines.at (real_lineno);
-        //                     }
-        //                 else
-        //                     {
-        //                         fn_data.fn_source_lines[std::to_string (num)]
-        //                             = "";
-        //                     }
-        //             }
-        //     }
 
         // function tree data
         {
@@ -416,12 +391,33 @@ plugin_init (struct plugin_name_args *plugin_info,
                 if (val == "msgpack")
                     config_data_format = "msgpack";
             }
+
+            if (key == "skip_functions") {
+                config_skip_functions = split_string_by_comma(val);
+            }
         }
 
     register_callback (plugin_info->base_name, PLUGIN_PASS_MANAGER_SETUP, NULL,
                        &pass_info);
 
     return 0;
+}
+
+
+bool contains_string(const std::vector<std::string>& vec, const std::string& search_str) {
+    return std::find(vec.begin(), vec.end(), search_str) != vec.end();
+}
+
+
+std::vector<std::string> split_string_by_comma(const std::string& str) {
+    std::vector<std::string> tokens;
+    std::stringstream ss(str);
+    std::string token;
+
+    while (std::getline(ss, token, ',')) {
+        tokens.push_back(token);
+    }
+    return tokens;
 }
 
 
