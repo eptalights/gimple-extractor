@@ -20,11 +20,11 @@ An [Eptalights](http://eptalights.com) Sophia GCC plugin for exporting GIMPLE IR
 ##### Build for specific GCC versions from the supported versions above  
 
 ```sh
-git clone https://github.com/finixbit/gimple-extractor
-cd /path/to/gimple-extractor
+git clone https://github.com/eptalights/sophia-extractor-cxx
+cd /path/to/sophia-extractor-cxx
 make docker-build-<supported-gcc-version>
 
-# bin/gimple_extractor.so
+# bin/sophia_extractor_gimple.so
 ```
 
 ## Without Docker: Building Plugin
@@ -37,51 +37,51 @@ make docker-build-<supported-gcc-version>
 ##### Build for specific GCC versions from the supported versions above  
 
 ```sh
-git clone https://github.com/finixbit/gimple-extractor
-cd /path/to/gimple-extractor
+git clone https://github.com/eptalights/sophia-extractor-cxx
+cd /path/to/sophia-extractor-cxx
 make
 
-# bin/gimple_extractor.so
+# bin/sophia_extractor_gimple.so
 ```
 
 ## Usage
 
 ##### Compiling single source file.  
 
-GCC to load the `gimple_extractor.so` plugin path specified in `fplugin` before compiling.  
-Tell `gimple_extractor.so` where the source directory is using `fplugin-arg-gimple_extractor-source_path` to allow the extracted data to follow the same directory structure as the source directory.  
-Data is extracted to the path specified in `fplugin-arg-gimple_extractor-extract_output_path`.
+GCC to load the `sophia_extractor_gimple.so` plugin path specified in `fplugin` before compiling.  
+Tell `sophia_extractor_gimple.so` where the source directory is using `fplugin-arg-sophia_extractor_gimple-source_path` to allow the extracted data to follow the same directory structure as the source directory.  
+Data is extracted to the path specified in `fplugin-arg-sophia_extractor_gimple-extract_output_path`.
 ```sh
-gcc -fplugin=/path/to/gimple_extractor.so \
-	-fplugin-arg-gimple_extractor-source_path=/path/here \
-	-fplugin-arg-gimple_extractor-output_path=/path/here \
+gcc -fplugin=/path/to/sophia_extractor_gimple.so \
+	-fplugin-arg-sophia_extractor_gimple-source_path=/path/here \
+	-fplugin-arg-sophia_extractor_gimple-output_path=/path/here \
 	-c src/helloworld.cpp
 ```
 
 There are only 2 supported data formats `(msgpack | json)` with the default data format `msgpack`.  
-That can be changed using the flag `fplugin-arg-gimple_extractor-data_format`.
+That can be changed using the flag `fplugin-arg-sophia_extractor_gimple-data_format`.
 ```sh
-gcc -fplugin=/path/to/gimple_extractor.so \
-	-fplugin-arg-gimple_extractor-source_path=/path/here \
-	-fplugin-arg-gimple_extractor-output_path=/path/here \
-	-fplugin-arg-gimple_extractor-data_format=json \
+gcc -fplugin=/path/to/sophia_extractor_gimple.so \
+	-fplugin-arg-sophia_extractor_gimple-source_path=/path/here \
+	-fplugin-arg-sophia_extractor_gimple-output_path=/path/here \
+	-fplugin-arg-sophia_extractor_gimple-data_format=json \
 	-c src/helloworld.cpp
 ```
 
 ##### Compiling a code with a Makefile instead of a single source file.  
 
 ```sh
-make CC="gcc -fplugin=/path/to/gimple_extractor.so -fplugin-arg-gimple_extractor-source_path=/path/here -fplugin-arg-gimple_extractor-output_path=/path/here"
+make CC="gcc -fplugin=/path/to/sophia_extractor_gimple.so -fplugin-arg-sophia_extractor_gimple-source_path=/path/here -fplugin-arg-sophia_extractor_gimple-output_path=/path/here"
 ```
 
 ##### Extracting Specific Paths in Large Projects
 
-Sometimes projects can be huge, but we only want to extract a specific path of the project. We can achieve this by using `-fplugin-arg-gimple_extractor-source_path`.
+Sometimes projects can be huge, but we only want to extract a specific path of the project. We can achieve this by using `-fplugin-arg-sophia_extractor_gimple-source_path`.
 
 ```sh
-g++ -fplugin=/gimple_extractor.so \
-    -fplugin-arg-gimple_extractor-source_path=/path/to/selected/source/path \
-    -fplugin-arg-gimple_extractor-output_path=/path/here \
+g++ -fplugin=/sophia_extractor_gimple.so \
+    -fplugin-arg-sophia_extractor_gimple-source_path=/path/to/selected/source/path \
+    -fplugin-arg-sophia_extractor_gimple-output_path=/path/here \
     -c src/helloworld.cpp
 ```
 
@@ -90,10 +90,10 @@ g++ -fplugin=/gimple_extractor.so \
 In the event of errors from particular functions, you can temporarily skip them to continue extraction, then raise a pull request to get them fixed.
 
 ```sh
-gcc -fplugin=/path/to/gimple_extractor.so \
-	-fplugin-arg-gimple_extractor-source_path=/path/here \
-	-fplugin-arg-gimple_extractor-output_path=/path/here \
-	-fplugin-arg-gimple_extractor-data_format=json \
-	-fplugin-arg-gimple_extractor-skip_functions=function1,function2,... \
+gcc -fplugin=/path/to/sophia_extractor_gimple.so \
+	-fplugin-arg-sophia_extractor_gimple-source_path=/path/here \
+	-fplugin-arg-sophia_extractor_gimple-output_path=/path/here \
+	-fplugin-arg-sophia_extractor_gimple-data_format=json \
+	-fplugin-arg-sophia_extractor_gimple-skip_functions=function1,function2,... \
 	-c src/helloworld.cpp
 ```
