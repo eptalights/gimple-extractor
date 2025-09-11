@@ -20,7 +20,7 @@
 int plugin_is_GPL_compatible;
 
 std::string config_data_format = "msgpack";
-std::string config_output_path = "__default_gimple_extract_output/";
+std::string config_output_path = "eptalights_code_extract_output_cxx/";
 std::string config_source_path = ".";
 std::vector<std::string> config_skip_functions;
 

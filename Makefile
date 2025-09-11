@@ -22,7 +22,7 @@ SRCS = $(SRC_DIR)/gimple_extractor.cc $(EXT_DIR)/json11.cpp $(EXT_DIR)/msgpack11
 OBJS = $(SRCS:%.cc=$(BIN_DIR)/%.o)
 
 # Target
-TARGET = $(BIN_DIR)/sophia_extractor_gimple.so
+TARGET = $(BIN_DIR)/eptalights_code_extractor_cxx.so
 
 # Rules
 all: $(TARGET)
